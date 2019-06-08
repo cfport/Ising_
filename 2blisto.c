@@ -7,8 +7,9 @@ int pob(int *red,int d, float p);
 int imprimir(int d, int *red);
 int probas_libre(float *p_l, float B);
 int pinteraccion(float *pint, float J);
-int interacciones(int *red, int d, int up, int down, int left, int right)
-int flip(int *red, int d, float B, float J, float *de, float *mag,float *p_l, float *pint, float *energia, float *h);
+int interacciones(int *red, int d, int s_rand_i, int s_rand_j);
+int flip(int *red, int d, float B, float J, float *de, float *mag,float *p_l, float *pint, float *energia, float *h, int *spin);
+int barrido(int d, int *red);
 float magnetizacion(int *red, int d);
 float enl(float B,float J, int d, int *red);
 float el(float B, int d, int *red);
@@ -19,25 +20,16 @@ int main(int argc, char* argv[])
 {
   int d;
   int *red;
-  float *de;
-  float *mag;
+  //float *de;
+  //float *mag;
   float p;
-  float *p_l;
-  int *spin;
-  float *pint;
-  float *J;
-  float h;
-  int n;
-  float energia;
+//int *spin;
+ // float *pint;
+  //float *h;
+  
   
   d=D;
-  FILE *nc;
   p=0.5;
-
-  
-
-  nc=fopen("J", "w");
-
   if (argc==2)
    {
     sscanf(argv[1], "%d", &d);
@@ -45,43 +37,24 @@ int main(int argc, char* argv[])
    }
   else printf("\nWrong number of parameters....\n");
 
-p_l=(float*)malloc(2*sizeof(float));
+
 red=(int*)malloc(d*d*sizeof(int));
-de=(float*)malloc(sizeof(float));
-mag=(float*)malloc(sizeof(float));
-spin=(int*)malloc(sizeof(int));	
-h=(float*)malloc(sizeof(float));
-pint=(float*)malloc(5*sizeof(float));
-   
+//de=(float*)malloc(sizeof(float));
+//mag=(float*)malloc(sizeof(float));
+//spin=(int*)malloc(sizeof(int));	
+//h=(float*)malloc(sizeof(float));
 
 
 pob(red,d, p);
-  
-
-
-  for (J=0.1; J<0.6; J=J+0.0001) 
-
-   {
-      probas_libre(p_l, 0);
-       pinteraccion(pint, J);
-        flip(red, d, 0, J, de, mag, p_l, pint, energia, h);
-  
-
-
-  fprintf(nc, "%f %f %f \n", J, *mag, *h);
-
-   }
-
-
+barrido(d, red);
 
   free(red);
-  free(de);
-  free(p_l);
-  free(pint);
-  free(mag);
-  free(spin);
-  free(h);
-  fclose(nc);
+ // free(de);
+ // free(p_l);
+  //free(pint);
+//  free(mag);
+  //free(spin);
+  //free(h);
 
  return 0;
 
@@ -141,16 +114,15 @@ return 0;
 
 }
 
-int interacciones(int *red, int d, int up, int down, int left, int right)
+int interacciones(int *red, int d, int s_rand_i, int s_rand_j)
 
 {  
   
-  int s_rand_i, s_rand_j;
+	int up,down,left,right;
   int c_m;
-  int D_E;
+
  
-  s_rand_i=rand()%d;
-  s_rand_j=rand()%d;
+  
 
   up=(s_rand_i-1+d)%d;
   down=(s_rand_i+1+d)%d;
@@ -158,10 +130,10 @@ int interacciones(int *red, int d, int up, int down, int left, int right)
   right=(s_rand_j+1+d)%d;
  
  
-D_E=(float)(J*(*(red + d*s_rand_i + s_rand_j)))*( *(red +up*d + s_rand_j)+ *(red+down*d + s_rand_j) + *(red+d*s_rand_i+left)+ *(red+d*s_rand_i+right));
+//D_E=(float)(J*(*(red + d*s_rand_i + s_rand_j)))*( *(red +up*d + s_rand_j)+ *(red+down*d + s_rand_j) + *(red+d*s_rand_i+left)+ *(red+d*s_rand_i+right));
 c_m=*(red +up*d + s_rand_j)+ *(red+down*d + s_rand_j) + *(red+d*s_rand_i+left)+ *(red+d*s_rand_i+right);
 
-return 0;
+return c_m;
 
 }
 
@@ -185,66 +157,105 @@ int imprimir(int d, int *red)
 }
 
 
-int flip(int *red, int d, float B, float J, float *de, float *mag,float *p_l, float *pint, float *energia, float *h)
+int flip(int *red, int d, float B, float J, float *de, float *mag,float *p_l, float *pint, float *energia, float *h,int *spin)
 
-{ int acepto;
-  int r,spin, i;
+{ 
+  int r;
   int indice, indiceint;
   float interac;
+  int s_rand_i, s_rand_j;
 
 
-  interac=int interacciones(red, d, up, down, left, right)
-  *de=2*(float)spin*(B+J*interac); //si b es distinto de , (B+J*vecinos)
-  indice=((float)spin+1)/2;								
-  indiceint=(((float)spin)*interac+4)/2;	
+  energia=(float*)malloc(sizeof(float));
+mag=(float*)malloc(sizeof(float));	
+h=(float*)malloc(sizeof(float));
+de=(float*)malloc(sizeof(float));
 
- 
-  acepto=0;
 
-  for(i=0;i<100000;i++)
-     {
-	 r=(int)(aleatorio()*((float)(d*d)));	
-	 
-	 *spin=*(red+r);
-	 *de=2*(float)spin*B;
-    
+	s_rand_i=rand()%d;
+  	s_rand_j=rand()%d;
 
-	//printf("%d\n", r);
-	 if (*de<0.0)
-	{
-	   *(red+r)=(-1)*spin;
-	   acepto++;
-        }
-	else 
-        {
-          
-	   indice=((float)spin+1)/2;
-           indiceint=(spin*c_m+4)/2;
+  interac=interacciones(red, d, s_rand_i,s_rand_j);
+  *de=2.0*((float)(*spin))*(B+J*((float)interac)); //si b es distinto de , (B+J*vecinos)
+  indice=(*spin+1)/2;								
+  indiceint=(*spin*interac+4)/2;	
+  r=d*s_rand_i+s_rand_j;
 
-           if (aleatorio()<(*(pint + indiceint))*(*(p_l+indice))) 
+ if (aleatorio()<(*(pint + indiceint))*(*(p_l+indice))) 
 
-            {  *(red+r)=(-1)**(float)spin;
-               acepto++;
+            {  *(red+r)=((*spin))*(-1);
               
             }
-
-          }
-
-   *(h+i+1)=*(h+i)+*de;
-   *(mag+i+1)=*(mag+i)+2*(*(float)spin); 
-
-
-        }
-
+ 
 
 *mag=magnetizacion(red, d);
 *energia=enl(B, J, d, red);
 *h=el(B, d, red);
 
 
-      
-return acepto;
+free(spin);     
+return 0;
   
+}
+
+
+int barrido(int d, int *red)
+
+{
+  float B, J, *de, *mag, *p_l,*pint, *energia, *h;
+ int i,*spin;
+
+spin=(int*)malloc(sizeof(int));
+p_l=(float*)malloc(2*sizeof(float));
+pint=(float*)malloc(5*sizeof(float));
+energia=(float*)malloc(sizeof(float));
+mag=(float*)malloc(sizeof(float));	
+h=(float*)malloc(sizeof(float));
+de=(float*)malloc(sizeof(float));
+
+B=0.0;
+
+probas_libre(p_l, B);
+
+FILE *nc;
+
+nc=fopen("J", "w");
+
+
+for(J=0.1;J<0.6;J++)
+
+{  
+  pinteraccion(pint,J);
+
+ FILE *nc;
+
+nc=fopen("J", "w");
+
+  for(i=0;i<100000;i++)
+     {
+	 flip(red, d, B, J, de, mag, p_l, pint, energia, h,spin);
+
+          }
+
+   *(h+i+1)=*(h+i)+*de;
+   *(mag+i+1)=*(mag+i)+2*((float)(*spin)); 
+}
+
+
+fprintf(nc, "%f %f %f \n", J, *mag, *h);
+
+free(p_l);
+free(pint); 
+
+free(energia);
+free(mag);
+free(h);     
+free(de);  
+fclose(nc);  
+free(spin);
+
+return 0;
+
 }
 
 
