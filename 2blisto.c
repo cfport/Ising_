@@ -227,9 +227,7 @@ for(J=0.1;J<0.6;J++)
 {  
   pinteraccion(pint,J);
 
- FILE *nc;
 
-nc=fopen("J", "w");
 
   for(i=0;i<100000;i++)
      {
